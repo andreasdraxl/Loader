@@ -138,17 +138,38 @@ fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 
   :::
 */
-
 async function loadIfc() {
-  const file = await fetch(
-    "https://thatopen.github.io/engine_components/resources/small.ifc",
-  );
-  const data = await file.arrayBuffer();
-  const buffer = new Uint8Array(data);
-  const model = await fragmentIfcLoader.load(buffer);
-  model.name = "example";
-  world.scene.three.add(model);
+  return new Promise<void>((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".ifc";
+    input.style.display = "none";
+
+    input.addEventListener("change", async (event) => {
+      const fileInput = event.target as HTMLInputElement;
+      if (!fileInput.files || fileInput.files.length === 0) return;
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        if (!e.target || !e.target.result) return;
+        const buffer = new Uint8Array(e.target.result as ArrayBuffer);
+        const model = await fragmentIfcLoader.load(buffer);
+        model.name = file.name;
+        world.scene.three.add(model);
+        resolve();
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+  });
 }
+
 
 /* MD
   If you want to get the resulted model every time a new model is loaded, you can subscribe to the following event anywhere in your app:
